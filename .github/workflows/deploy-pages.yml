@@ -31,6 +31,28 @@ jobs:
         run: |
           echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > last-tracks-update
 
+      - name: Check if tracks.json changed in push payload
+        id: tracks_changed
+        run: |
+          # Use GitHub event payload to detect if tracks.json changed in this push
+          if jq -e '[(.commits // [])[] | (.added // []) + (.modified // []) + (.removed // [])] | index("tracks.json")' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write update.json
+        if: steps.tracks_changed.outputs.changed == 'true'
+        run: |
+          NOW=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          if [ -f update.json ]; then
+            # Preserve existing fields (like .live) and only update tracks.edited
+            jq --arg now "$NOW" '.tracks.edited=$now' update.json > update.json.tmp && mv update.json.tmp update.json
+          else
+            # Create a minimal file matching the expected structure
+            jq -n --arg now "$NOW" '{tracks:{edited:$now}}' > update.json
+          fi
+
       - name: jq test
         run: |
           echo '{"tracks":{"edited":"2025-10-25T10:30:00Z"},"live":{"id":"20251025-0900","edited":"2025-10-25T12:36:00Z"}}' | jq .
