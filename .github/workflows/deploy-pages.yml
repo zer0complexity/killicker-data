@@ -26,22 +26,49 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Fetch enough history so we can diff the pushed range
+          fetch-depth: 2
 
       - name: Create last-tracks-update file
         run: |
           echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > last-tracks-update
 
-      - name: Check if tracks.json changed in push payload
+      - name: Detect tracks.json changes (payload + git)
         id: tracks_changed
         run: |
-          # Use GitHub event payload to detect if tracks.json changed in this push
-          if jq -e '[(.commits // [])[] | (.added // []) + (.modified // []) + (.removed // [])] | index("tracks.json")' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Tracks changed: true"
+          set -euo pipefail
+
+          changed=false
+
+          echo "Checking push payload for tracks.json changes..."
+          # Correct jq filter: flatten file lists and include head_commit as fallback for truncated payloads
+          if jq -e '
+            def files: (.added // []) + (.modified // []) + (.removed // []);
+            any((.commits[]?, .head_commit?); files[]? == "tracks.json")
+          ' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
+            changed=true
+            echo "Detected change via payload: tracks.json"
           else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Tracks changed: false"
+            echo "Payload did not show change; attempting git diff fallback..."
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.sha }}"
+
+            # Skip git diff if BEFORE is all zeros (e.g., first push) or empty
+            if [ -n "$BEFORE" ] && ! echo "$BEFORE" | grep -qE '^[0]{40}$'; then
+              if git diff --name-only "$BEFORE" "$AFTER" | grep -qx 'tracks.json'; then
+                changed=true
+                echo "Detected change via git diff: tracks.json"
+              else
+                echo "git diff did not include tracks.json"
+              fi
+            else
+              echo "No valid BEFORE SHA available for git diff fallback"
+            fi
           fi
+
+          echo "changed=${changed}" >> "$GITHUB_OUTPUT"
+          echo "Tracks changed: ${changed}"
 
       - name: Write update.json
         if: steps.tracks_changed.outputs.changed == 'true'
