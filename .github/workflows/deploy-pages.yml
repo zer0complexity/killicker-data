@@ -53,10 +53,6 @@ jobs:
             jq -n --arg now "$NOW" '{tracks:{edited:$now}}' > update.json
           fi
 
-      - name: jq test
-        run: |
-          echo '{"tracks":{"edited":"2025-10-25T10:30:00Z"},"live":{"id":"20251025-0900","edited":"2025-10-25T12:36:00Z"}}' | jq .
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
