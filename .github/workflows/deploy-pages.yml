@@ -63,6 +63,7 @@ jobs:
 
           MODIFIED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
           echo "Modified files:"
+          echo "$MODIFIED_FILES"
 
       - name: Write update.json
         if: steps.tracks_changed.outputs.changed == 'true'
