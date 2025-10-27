@@ -37,8 +37,10 @@ jobs:
           # Use GitHub event payload to detect if tracks.json changed in this push
           if jq -e '[(.commits // [])[] | (.added // []) + (.modified // []) + (.removed // [])] | index("tracks.json")' "$GITHUB_EVENT_PATH" >/dev/null 2>&1; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Tracks changed: true"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Tracks changed: false"
           fi
 
       - name: Write update.json
@@ -52,6 +54,11 @@ jobs:
             # Create a minimal file matching the expected structure
             jq -n --arg now "$NOW" '{tracks:{edited:$now}}' > update.json
           fi
+
+      - name: No changes to tracks.json
+        if: steps.tracks_changed.outputs.changed == 'false'
+        run: |
+          echo "No changes to tracks.json; not updating update.json"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
