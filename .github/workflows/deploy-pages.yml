@@ -82,11 +82,6 @@ jobs:
             jq -n --arg now "$NOW" '{tracks:{edited:$now}}' > update.json
           fi
 
-      - name: No changes to tracks.json
-        if: steps.tracks_changed.outputs.changed == 'false'
-        run: |
-          echo "No changes to tracks.json; not updating update.json"
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
