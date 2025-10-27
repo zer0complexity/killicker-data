@@ -30,10 +30,6 @@ jobs:
           # Fetch enough history so we can diff the pushed range
           fetch-depth: 2
 
-      - name: Create last-tracks-update file
-        run: |
-          echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > last-tracks-update
-
       - name: Detect tracks.json changes
         id: tracks_changed
         run: |
@@ -71,7 +67,6 @@ jobs:
             # Create a minimal file matching the expected structure
             jq -n --arg now "$NOW" '{tracks:{edited:$now}}' > update.json
           fi
-          cat update.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
