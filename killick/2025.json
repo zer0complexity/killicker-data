@@ -239,6 +239,21 @@
             "id": "20251113-0114",
             "pointCount": 67,
             "Distance": 8288.03601294756
+        },
+        {
+            "id": "20251113-0222",
+            "pointCount": 1,
+            "Distance": 0.0
+        },
+        {
+            "id": "20251113-0227",
+            "pointCount": 1,
+            "Distance": 0.0
+        },
+        {
+            "id": "20251113-1524",
+            "pointCount": 1,
+            "Distance": 0.0
         }
     ]
 }
